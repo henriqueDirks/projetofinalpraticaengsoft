@@ -1,70 +1,127 @@
-# Getting Started with Create React App
+-- MySQL Workbench Forward Engineering
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
-## Available Scripts
+-- -----------------------------------------------------
+-- Schema mydb
+-- -----------------------------------------------------
+-- -----------------------------------------------------
+-- Schema projetofinalturmas
+-- -----------------------------------------------------
 
-In the project directory, you can run:
+-- -----------------------------------------------------
+-- Schema projetofinalturmas
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `projetofinalturmas` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
+USE `projetofinalturmas` ;
 
-### `npm start`
+-- -----------------------------------------------------
+-- Table `projetofinalturmas`.`alunos`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `projetofinalturmas`.`alunos` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(100) NOT NULL,
+  `CPF` CHAR(11) NOT NULL,
+  `regularidade` ENUM('regular', 'irregular') NULL DEFAULT 'regular',
+  `status` ENUM('ativo', 'inativo') NULL DEFAULT 'ativo',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `CPF` (`CPF` ASC) VISIBLE)
+ENGINE = MyISAM
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+-- -----------------------------------------------------
+-- Table `projetofinalturmas`.`disciplinas`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `projetofinalturmas`.`disciplinas` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(100) NOT NULL,
+  `codigo` VARCHAR(10) NOT NULL,
+  `periodo` INT NOT NULL,
+  `status` ENUM('ativo', 'inativo') NULL DEFAULT 'ativo',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `codigo` (`codigo` ASC) VISIBLE)
+ENGINE = MyISAM
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+-- -----------------------------------------------------
+-- Table `projetofinalturmas`.`professores`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `projetofinalturmas`.`professores` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(100) NOT NULL,
+  `CPF` CHAR(11) NOT NULL,
+  `titulacao` VARCHAR(50) NULL DEFAULT NULL,
+  `status` ENUM('ativo', 'inativo') NULL DEFAULT 'ativo',
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `CPF` (`CPF` ASC) VISIBLE)
+ENGINE = MyISAM
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+-- -----------------------------------------------------
+-- Table `projetofinalturmas`.`salas`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `projetofinalturmas`.`salas` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(50) NOT NULL,
+  `local` VARCHAR(100) NULL DEFAULT NULL,
+  `capacidade` INT NOT NULL,
+  `status` ENUM('ativo', 'inativo') NULL DEFAULT 'ativo',
+  PRIMARY KEY (`id`))
+ENGINE = MyISAM
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+-- -----------------------------------------------------
+-- Table `projetofinalturmas`.`turmas`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `projetofinalturmas`.`turmas` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(100) NOT NULL,
+  `dia_semana` ENUM('Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado') NOT NULL,
+  `horario_inicio` TIME NOT NULL,
+  `horario_termino` TIME NOT NULL,
+  `status` ENUM('ativo', 'inativo') NULL DEFAULT 'ativo',
+  `professores_id` INT NOT NULL,
+  `salas_id` INT NOT NULL,
+  `disciplinas_id` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_turmas_professores1_idx` (`professores_id` ASC) VISIBLE,
+  INDEX `fk_turmas_salas1_idx` (`salas_id` ASC) VISIBLE,
+  INDEX `fk_turmas_disciplinas1_idx` (`disciplinas_id` ASC) VISIBLE)
+ENGINE = MyISAM
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+-- -----------------------------------------------------
+-- Table `projetofinalturmas`.`turmaaluno`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `projetofinalturmas`.`turmaaluno` (
+  `alunos_id` INT NOT NULL,
+  `turmas_id` INT NOT NULL,
+  `status` ENUM('ativo', 'inativo') NULL DEFAULT 'ativo',
+  INDEX `fk_TURMAALUNO_alunos_idx` (`alunos_id` ASC) VISIBLE,
+  INDEX `fk_TURMAALUNO_turmas1_idx` (`turmas_id` ASC) VISIBLE,
+  CONSTRAINT `fk_TURMAALUNO_alunos`
+    FOREIGN KEY (`alunos_id`)
+    REFERENCES `projetofinalturmas`.`alunos` (`id`),
+  CONSTRAINT `fk_TURMAALUNO_turmas1`
+    FOREIGN KEY (`turmas_id`)
+    REFERENCES `projetofinalturmas`.`turmas` (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
