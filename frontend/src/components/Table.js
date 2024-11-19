@@ -1,45 +1,44 @@
 import React, { useEffect, useState } from 'react';
+import { FaEdit, FaTrashAlt, FaUsers } from 'react-icons/fa'; 
 
-const Table = ({ table, searchTerm }) => {
+const Table = ({ table, searchTerm, onEdit, onDelete, onViewRelated }) => {
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (table) {
-      setIsLoading(true);
-
-      // Adapta a URL para "turmas"
-      const url =
-        table === 'turmas'
-          ? `http://localhost:5000/api/turmas` // Rota específica para turmas
-          : `http://localhost:5000/api/${table}`; // Rota genérica para outras tabelas
-
-      const queryParam = searchTerm ? `?name=${searchTerm}` : '';
-      const fullUrl = url + queryParam;
-
-      fetch(fullUrl)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Erro ao buscar dados: ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          console.log('Dados recebidos:', data); // Log dos dados recebidos
-          setData(data);
-          setError(null);
-        })
-        
-        .catch((err) => {
-          setError(err.message);
-          setData([]);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+      fetchData();
     }
   }, [table, searchTerm]);
+
+  const fetchData = () => {
+    setIsLoading(true);
+
+    const queryParam = searchTerm ? `?name=${searchTerm}` : '';
+    const url = `http://localhost:5000/api/${table}${queryParam}`;
+
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar dados: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Dados recebidos:', data); // Debug para verificar os dados recebidos
+        setData(data);
+        setError(null);
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar dados:', err);
+        setError(err.message);
+        setData([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
 
   if (!table) {
     return <p>Selecione uma tabela para visualizar os dados.</p>;
@@ -53,39 +52,74 @@ const Table = ({ table, searchTerm }) => {
     return <p style={{ color: 'red' }}>{error}</p>;
   }
 
-  // Colunas personalizadas para "turmas"
   const isTurmas = table === 'turmas';
-  const customColumns = isTurmas
-    ? ['turma', 'professor', 'sala', 'disciplina', 'dia_semana', 'horario_inicio', 'horario_termino']
-    : data.length > 0
+  const isAlunos = table === 'alunos';
+
+  // Define colunas dinamicamente com base na tabela
+  const columns = data.length > 0
     ? Object.keys(data[0]).filter((key) => key !== 'id' && key !== 'status')
     : [];
 
+  // Adiciona a coluna "ações" para todas as tabelas
+  if (data.length > 0) {
+    columns.push('ações');
+  }
+
   return (
-    <table>
-      <thead>
-        <tr>
-          {customColumns.map((key) => (
-            <th key={key}>{key}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.length > 0 ? (
-          data.map((row, index) => (
-            <tr key={index}>
-              {customColumns.map((key) => (
-                <td key={key}>{row[key]}</td>
-              ))}
-            </tr>
-          ))
-        ) : (
+    <div>
+      <table>
+        <thead>
           <tr>
-            <td colSpan={customColumns.length}>Nenhum dado encontrado.</td>
+            {columns.map((col) => (
+              <th key={col}>{col.toUpperCase()}</th>
+            ))}
           </tr>
-        )}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {data.length > 0 ? (
+            data.map((row, index) => (
+              <tr key={index}>
+                {columns.map((col) =>
+                  col === 'ações' ? (
+                    <td key={col}>
+                      {/* Ícone para alterar */}
+                      <FaEdit
+                        style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
+                        onClick={() => onEdit(row.id)}
+                      />
+                      {/* Ícone para excluir */}
+                      <FaTrashAlt
+                        style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
+                        onClick={() => onDelete(row.id)}
+                      />
+                      {/* Ícone para ver dados relacionados */}
+                      {(isTurmas || isAlunos) && (
+                        <FaUsers
+                          style={{ cursor: 'pointer', color: 'green' }}
+                          onClick={() =>
+                            onViewRelated(
+                              isTurmas ? 'alunos' : 'turmas',
+                              row.id,
+                              isTurmas ? `Alunos da turma ${row.turma}` : `Turmas do aluno ${row.nome}`
+                            )
+                          }
+                        />
+                      )}
+                    </td>
+                  ) : (
+                    <td key={col}>{row[col]}</td>
+                  )
+                )}
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={columns.length}>Nenhum dado encontrado.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

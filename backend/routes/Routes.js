@@ -2,28 +2,17 @@ const express = require('express');
 const router = express.Router();
 const Controller = require('../controllers/Controller');
 
-// Retorna todos os registros ativos
+// Busca registros ativos ou relacionados
 router.get('/:table', async (req, res) => {
-    const { table } = req.params;
-    const { name } = req.query; // Parâmetro opcional para busca por nome
-    try {
-      const data = await Controller.getAll(table, name);
-      res.status(200).json(data);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-  
-  // Rota específica para "turmas"
-router.get('/turmas', async (req, res) => {
-    const { name } = req.query; // Parâmetro opcional para busca por nome
-    try {
-      const data = await Controller.getAll('turmas', name);
-      res.status(200).json(data);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
+  const { table } = req.params;
+  const { name, relatedId } = req.query; // Busca por nome ou registros relacionados
+  try {
+    const data = await Controller.getAll(table, name, relatedId);
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Insere um novo registro
 router.post('/:table', async (req, res) => {
