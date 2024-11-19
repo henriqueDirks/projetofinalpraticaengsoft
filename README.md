@@ -108,7 +108,6 @@ COLLATE = utf8mb4_0900_ai_ci;
 CREATE TABLE IF NOT EXISTS `projetofinalturmas`.`turmaaluno` (
   `alunos_id` INT NOT NULL,
   `turmas_id` INT NOT NULL,
-  `status` ENUM('ativo', 'inativo') NULL DEFAULT 'ativo',
   INDEX `fk_TURMAALUNO_alunos_idx` (`alunos_id` ASC) VISIBLE,
   INDEX `fk_TURMAALUNO_turmas1_idx` (`turmas_id` ASC) VISIBLE,
   CONSTRAINT `fk_TURMAALUNO_alunos`

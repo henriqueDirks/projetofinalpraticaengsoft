@@ -1,62 +1,41 @@
-// src/components/HomeView.js
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import Table from './Table';
-import Form from './Form';
+import FormModal from './FormModal';
+import ReactivationModal from './ReactivationModal';
 
 const HomeView = () => {
-  const [table, setTable] = useState('');
-  const [search, setSearch] = useState('');
-  const [data, setData] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [inactiveData, setInactiveData] = useState([]);
-  const [showInactive, setShowInactive] = useState(false);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isReactivationOpen, setIsReactivationOpen] = useState(false);
+  const [reloadTable, setReloadTable] = useState(false);
 
-  // Fetch data whenever the table selection changes
-  useEffect(() => {
-    if (table) {
-      fetchData();
-    }
-  }, [table]);
-
-  // Fetch active data from the selected table
-  const fetchData = async () => {
-    try {
-      const response = await axios.get(`/api/${table}`);
-      setData(response.data);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
+  const handleTableChange = (event) => {
+    setSelectedTable(event.target.value);
+    setReloadTable(!reloadTable); // Força a recarga da tabela ao trocar
   };
 
-  // Fetch inactive data for reactivation
-  const fetchInactiveData = async () => {
-    try {
-      const response = await axios.get(`/api/${table}/inativos`);
-      setInactiveData(response.data);
-      setShowInactive(true);
-    } catch (error) {
-      console.error("Error fetching inactive data:", error);
-    }
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
   };
 
-  // Handle table selection change
-  const handleTableChange = (e) => {
-    setTable(e.target.value);
-    setShowForm(false);
-    setShowInactive(false);
+  const handleSearchClick = () => {
+    setReloadTable(!reloadTable); // Força a atualização da tabela com o termo de pesquisa
   };
 
-  // Handle form display
-  const handleInsertClick = () => {
-    setShowForm(true);
+  const toggleForm = () => {
+    setIsFormOpen(!isFormOpen);
+  };
+
+  const toggleReactivation = () => {
+    setIsReactivationOpen(!isReactivationOpen);
   };
 
   return (
-    <div>
-      <header>
-        <select onChange={handleTableChange} value={table}>
-          <option value="">Selecione a Tabela</option>
+    <div className="home-view">
+      <header className="top-bar">
+        <select onChange={handleTableChange}>
+          <option value="">Selecione uma tabela</option>
           <option value="alunos">Alunos</option>
           <option value="disciplinas">Disciplinas</option>
           <option value="professores">Professores</option>
@@ -65,39 +44,39 @@ const HomeView = () => {
         </select>
         <input
           type="text"
-          placeholder="Pesquisar"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Pesquisar..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          disabled={!selectedTable}
         />
-        {table && (
-          <button onClick={handleInsertClick}>Inserir</button>
-        )}
+        <button onClick={handleSearchClick} disabled={!selectedTable}>
+          Pesquisar
+        </button>
+        <button onClick={toggleForm} disabled={!selectedTable}>
+          Inserir
+        </button>
       </header>
-
-      {showForm && (
-        <Form table={table} onClose={() => setShowForm(false)} />
-      )}
-
-      <Table data={data} search={search} table={table} />
-
+      <main>
+        {isFormOpen && (
+          <FormModal table={selectedTable} onClose={toggleForm} />
+        )}
+        {isReactivationOpen && (
+          <ReactivationModal table={selectedTable} onClose={toggleReactivation} />
+        )}
+        {!isFormOpen && !isReactivationOpen && selectedTable && (
+          <Table
+            table={selectedTable}
+            searchTerm={searchTerm}
+            reload={reloadTable}
+          />
+        )}
+      </main>
       <button
-        onClick={fetchInactiveData}
-        style={{ position: 'fixed', bottom: 10, right: 10 }}
+        className="reactivate-button"
+        onClick={toggleReactivation}
       >
         Reativar Itens
       </button>
-
-      {showInactive && (
-        <div>
-          <h3>Itens Inativos</h3>
-          {inactiveData.map((item) => (
-            <div key={item.id}>
-              <span>{item.nome}</span>
-              <button onClick={() => {/* lógica de reativação */}}>Reativar</button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };
