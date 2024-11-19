@@ -1,12 +1,16 @@
-// src/App.js
 import React from 'react';
 import HomeView from './components/HomeView';
 
 const App = () => {
   return (
-    <div>
-      <HomeView />
-    </div>
+    <>
+      <header>
+        <h1>Projeto Final</h1>
+      </header>
+      <div className="container">
+        <HomeView />
+      </div>
+    </>
   );
 };
 

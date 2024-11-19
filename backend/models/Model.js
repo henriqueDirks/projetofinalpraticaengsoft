@@ -1,12 +1,15 @@
 const connection = require('../db');
 
 const DatabaseModel = {
+  // Consulta genérica para tabelas
   selectAll: (table, name = '') => {
     return new Promise((resolve, reject) => {
       const query = name
         ? `SELECT * FROM ${table} WHERE status = 'ativo' AND nome LIKE ?`
         : `SELECT * FROM ${table} WHERE status = 'ativo'`;
       const values = name ? [`%${name}%`] : [];
+
+      console.log('Executando query (genérica):', query, values);
       connection.query(query, values, (err, results) => {
         if (err) return reject(err);
         resolve(results);
@@ -14,55 +17,32 @@ const DatabaseModel = {
     });
   },
 
-  selectInactive: (table) => {
+  // Consulta específica para "turmas" com INNER JOIN
+  selectAllTurmas: (name = '') => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM ${table} WHERE status = 'inativo'`;
-      connection.query(query, (err, results) => {
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
-  },
+      let query = `
+        SELECT 
+          turmas.nome AS turma,
+          professores.nome AS professor,
+          salas.nome AS sala,
+          disciplinas.nome AS disciplina,
+          turmas.dia_semana,
+          turmas.horario_inicio,
+          turmas.horario_termino
+        FROM turmas
+        INNER JOIN professores ON turmas.professores_id = professores.id
+        INNER JOIN salas ON turmas.salas_id = salas.id
+        INNER JOIN disciplinas ON turmas.disciplinas_id = disciplinas.id
+        WHERE turmas.status = 'ativo'
+      `;
 
-  insert: (table, data) => {
-    return new Promise((resolve, reject) => {
-      const keys = Object.keys(data).join(', ');
-      const values = Object.values(data);
-      const placeholders = values.map(() => '?').join(', ');
-      const query = `INSERT INTO ${table} (${keys}) VALUES (${placeholders})`;
+      const values = name ? [`%${name}%`] : [];
+      if (name) {
+        query += ' AND turmas.nome LIKE ?';
+      }
+
+      console.log('Executando query (INNER JOIN):', query, values);
       connection.query(query, values, (err, results) => {
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
-  },
-
-  update: (table, id, data) => {
-    return new Promise((resolve, reject) => {
-      const updates = Object.keys(data).map((key) => `${key} = ?`).join(', ');
-      const values = [...Object.values(data), id];
-      const query = `UPDATE ${table} SET ${updates} WHERE id = ?`;
-      connection.query(query, values, (err, results) => {
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
-  },
-
-  deactivate: (table, id) => {
-    return new Promise((resolve, reject) => {
-      const query = `UPDATE ${table} SET status = 'inativo' WHERE id = ?`;
-      connection.query(query, [id], (err, results) => {
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
-  },
-
-  activate: (table, id) => {
-    return new Promise((resolve, reject) => {
-      const query = `UPDATE ${table} SET status = 'ativo' WHERE id = ?`;
-      connection.query(query, [id], (err, results) => {
         if (err) return reject(err);
         resolve(results);
       });

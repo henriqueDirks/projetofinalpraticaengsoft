@@ -4,37 +4,24 @@ import FormModal from './FormModal';
 import ReactivationModal from './ReactivationModal';
 
 const HomeView = () => {
-  const [selectedTable, setSelectedTable] = useState(null);
+  const [table, setTable] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isReactivationOpen, setIsReactivationOpen] = useState(false);
-  const [reloadTable, setReloadTable] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showReactivationModal, setShowReactivationModal] = useState(false);
 
-  const handleTableChange = (event) => {
-    setSelectedTable(event.target.value);
-    setReloadTable(!reloadTable); // Força a recarga da tabela ao trocar
+  const handleTableChange = (e) => {
+    setTable(e.target.value);
   };
 
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleSearchClick = () => {
-    setReloadTable(!reloadTable); // Força a atualização da tabela com o termo de pesquisa
-  };
-
-  const toggleForm = () => {
-    setIsFormOpen(!isFormOpen);
-  };
-
-  const toggleReactivation = () => {
-    setIsReactivationOpen(!isReactivationOpen);
+  const handleSearch = () => {
+    setSearchTerm(searchTerm);
   };
 
   return (
-    <div className="home-view">
-      <header className="top-bar">
-        <select onChange={handleTableChange}>
+    <div>
+      {/* Barra superior */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+        <select onChange={handleTableChange} style={{ marginRight: '10px' }}>
           <option value="">Selecione uma tabela</option>
           <option value="alunos">Alunos</option>
           <option value="disciplinas">Disciplinas</option>
@@ -46,37 +33,37 @@ const HomeView = () => {
           type="text"
           placeholder="Pesquisar..."
           value={searchTerm}
-          onChange={handleSearchChange}
-          disabled={!selectedTable}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ marginRight: '10px' }}
         />
-        <button onClick={handleSearchClick} disabled={!selectedTable}>
+        <button onClick={handleSearch} disabled={!table}>
           Pesquisar
         </button>
-        <button onClick={toggleForm} disabled={!selectedTable}>
+        <button
+          onClick={() => setShowFormModal(true)}
+          disabled={!table}
+          style={{ marginLeft: '10px' }}
+        >
           Inserir
         </button>
-      </header>
-      <main>
-        {isFormOpen && (
-          <FormModal table={selectedTable} onClose={toggleForm} />
-        )}
-        {isReactivationOpen && (
-          <ReactivationModal table={selectedTable} onClose={toggleReactivation} />
-        )}
-        {!isFormOpen && !isReactivationOpen && selectedTable && (
-          <Table
-            table={selectedTable}
-            searchTerm={searchTerm}
-            reload={reloadTable}
-          />
-        )}
-      </main>
+      </div>
+
+      {/* Tabela */}
+      {table && <Table table={table} searchTerm={searchTerm} />}
+
+      {/* Botão de Reativar */}
       <button
-        className="reactivate-button"
-        onClick={toggleReactivation}
+        onClick={() => setShowReactivationModal(true)}
+        style={{ position: 'fixed', bottom: '20px', right: '20px' }}
       >
         Reativar Itens
       </button>
+
+      {/* Modais */}
+      {showFormModal && <FormModal table={table} onClose={() => setShowFormModal(false)} />}
+      {showReactivationModal && (
+        <ReactivationModal table={table} onClose={() => setShowReactivationModal(false)} />
+      )}
     </div>
   );
 };

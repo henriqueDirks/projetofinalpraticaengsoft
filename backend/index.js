@@ -1,16 +1,30 @@
-// backend/index.js
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
-const tableRoutes = require('./routes/tableRoutes'); // Certifique-se de que este caminho está correto
+const routes = require('./routes/Routes');
+
 const app = express();
 const PORT = 5000;
 
+// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Define as rotas para acessar as tabelas
-app.use('/api', tableRoutes);
+// Rotas
+app.use('/api', routes);
 
+// Middleware para lidar com rotas não encontradas
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
+});
+
+// Middleware de erro global
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Erro interno do servidor' });
+});
+
+// Inicialização do servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
