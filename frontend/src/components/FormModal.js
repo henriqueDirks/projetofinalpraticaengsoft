@@ -1,38 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const FormModal = ({ table, onClose }) => {
+const FormModal = ({ table, onClose, existingData = null, onSave }) => {
   const [formData, setFormData] = useState({});
 
+  useEffect(() => {
+    if (existingData) {
+      setFormData(existingData);
+    }
+  }, [existingData]);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetch(`http://localhost:5000/api/${table}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        alert('Registro inserido com sucesso!');
-        onClose();
-      })
-      .catch((err) => console.error('Erro ao inserir registro:', err));
+    onSave(formData); // Envia os dados para salvar
+    onClose(); // Fecha o modal
   };
 
   return (
-    <div className="modal">
-      <h2>Inserir Registro</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="nome" placeholder="Nome" onChange={handleChange} required />
-        {table === 'alunos' && <input name="CPF" placeholder="CPF" onChange={handleChange} required />}
-        <button type="submit">Salvar</button>
-        <button type="button" onClick={onClose}>
-          Cancelar
-        </button>
-      </form>
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>{existingData ? 'Editar Registro' : 'Inserir Registro'}</h2>
+        <form onSubmit={handleSubmit}>
+          {Object.keys(formData).map((key) => (
+            key !== 'id' && key !== 'status' && ( // Não exibe ID e status
+              <div key={key}>
+                <label>{key}</label>
+                <input
+                  type="text"
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                />
+              </div>
+            )
+          ))}
+          <button type="submit">Salvar</button>
+          <button type="button" onClick={onClose}>
+            Cancelar
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

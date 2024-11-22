@@ -1,6 +1,7 @@
 const DatabaseModel = require('../models/Model');
 
 const Controller = {
+
   // Valida CPF seguindo as regras brasileiras
   validateCPF(cpf) {
     cpf = cpf.replace(/[^\d]/g, ''); // Remove caracteres não numéricos
@@ -54,6 +55,14 @@ const Controller = {
     }
   },
 
+  async getAllInativos(table, name = '', relatedId = null) {
+    try {
+      return await DatabaseModel.selectAllInativos(table, name, relatedId);
+    } catch (err) {
+      throw new Error(`Erro ao buscar registros inativos na tabela ${table}: ${err.message}`);
+    }
+  },
+
   async insert(table, data) {
     try {
       return await DatabaseModel.insert(table, data);
@@ -83,6 +92,14 @@ const Controller = {
       return await DatabaseModel.activate(table, id);
     } catch (err) {
       throw new Error(`Erro ao reativar registro na tabela ${table}: ${err.message}`);
+    }
+  },
+
+  async deleteRelation(alunos_id, turmas_id) {
+    try {
+      return await DatabaseModel.deleteRelation(alunos_id, turmas_id);
+    } catch (err) {
+      throw new Error(`Erro ao excluir relação: ${err.message}`);
     }
   },
 };

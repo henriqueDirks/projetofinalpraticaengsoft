@@ -2,47 +2,46 @@ import React, { useEffect, useState } from 'react';
 
 const ReactivationModal = ({ table, onClose }) => {
   const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/${table}/inactive`)
-      .then((res) => res.json())
-      .then((data) => setData(data))
-      .catch((err) => console.error('Erro ao carregar dados:', err));
+    if (table) {
+      fetchInactiveItems();
+    }
   }, [table]);
+
+  const fetchInactiveItems = () => {
+    setIsLoading(true);
+
+    fetch(`http://localhost:5000/api/${table}?inactive=true`)
+      .then((response) => response.json())
+      .then((data) => setData(data))
+      .catch((err) => console.error(err))
+      .finally(() => setIsLoading(false));
+  };
 
   const handleReactivate = (id) => {
     fetch(`http://localhost:5000/api/${table}/${id}/activate`, { method: 'PATCH' })
-      .then(() => {
-        setData((prevData) => prevData.filter((item) => item.id !== id));
-        alert('Registro reativado com sucesso!');
-      })
-      .catch((err) => console.error('Erro ao reativar registro:', err));
+      .then(() => fetchInactiveItems()) // Atualiza lista após reativação
+      .catch((err) => console.error(err.message));
   };
+
+  if (isLoading) {
+    return <p>Carregando...</p>;
+  }
 
   return (
     <div className="modal">
-      <h2>Itens Inativos</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.nome}</td>
-              <td>
-                <button onClick={() => handleReactivate(item.id)}>Reativar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h2>Reativar Itens</h2>
       <button onClick={onClose}>Fechar</button>
+      <ul>
+        {data.map((item) => (
+          <li key={item.id}>
+            {item.nome}{' '}
+            <button onClick={() => handleReactivate(item.id)}>Reativar</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

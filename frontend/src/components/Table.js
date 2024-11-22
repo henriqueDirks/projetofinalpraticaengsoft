@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FaEdit, FaTrashAlt, FaUsers } from 'react-icons/fa'; 
+import { FaEdit, FaTrashAlt, FaUsers } from 'react-icons/fa';
 
-const Table = ({ table, searchTerm, onEdit, onDelete, onViewRelated }) => {
+const Table = ({ table, searchTerm, onEdit, onDeactivate, onViewRelated }) => {
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,12 +26,10 @@ const Table = ({ table, searchTerm, onEdit, onDelete, onViewRelated }) => {
         return response.json();
       })
       .then((data) => {
-        console.log('Dados recebidos:', data); // Debug para verificar os dados recebidos
         setData(data);
         setError(null);
       })
       .catch((err) => {
-        console.error('Erro ao buscar dados:', err);
         setError(err.message);
         setData([]);
       })
@@ -39,6 +37,51 @@ const Table = ({ table, searchTerm, onEdit, onDelete, onViewRelated }) => {
         setIsLoading(false);
       });
   };
+
+  const handleDeactivate = (id) => {
+    fetch(`http://localhost:5000/api/${table}/${id}/deactivate`, { method: 'PATCH' })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Erro ao desativar registro.');
+        }
+        alert('Registro desativado com sucesso.');
+        fetchData(); // Atualiza a tabela após a desativação
+      })
+      .catch((err) => {
+        console.error(err.message);
+        alert('Erro ao desativar registro.');
+      });
+  };
+
+  const renderActions = (row) => (
+    <td>
+      {/* Botão de Editar */}
+      <FaEdit
+        style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
+        onClick={() => onEdit(row)}
+      />
+      {/* Botão de Desativar */}
+      <FaTrashAlt
+        style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
+        onClick={() => handleDeactivate(row.id)}
+      />
+      {/* Botão de Ver Relacionados */}
+      {(table === 'turmas' || table === 'alunos') && (
+        <FaUsers
+          style={{ cursor: 'pointer', color: 'green' }}
+          onClick={() =>
+            onViewRelated(
+              table === 'turmas' ? 'alunos' : 'turmas',
+              row.id,
+              table === 'turmas'
+                ? `Alunos da turma ${row.turma || row.nome}`
+                : `Turmas do aluno ${row.nome}`
+            )
+          }
+        />
+      )}
+    </td>
+  );
 
   if (!table) {
     return <p>Selecione uma tabela para visualizar os dados.</p>;
@@ -52,15 +95,10 @@ const Table = ({ table, searchTerm, onEdit, onDelete, onViewRelated }) => {
     return <p style={{ color: 'red' }}>{error}</p>;
   }
 
-  const isTurmas = table === 'turmas';
-  const isAlunos = table === 'alunos';
-
-  // Define colunas dinamicamente com base na tabela
   const columns = data.length > 0
     ? Object.keys(data[0]).filter((key) => key !== 'id' && key !== 'status')
     : [];
 
-  // Adiciona a coluna "ações" para todas as tabelas
   if (data.length > 0) {
     columns.push('ações');
   }
@@ -77,38 +115,10 @@ const Table = ({ table, searchTerm, onEdit, onDelete, onViewRelated }) => {
         </thead>
         <tbody>
           {data.length > 0 ? (
-            data.map((row, index) => (
-              <tr key={index}>
+            data.map((row) => (
+              <tr key={row.id}>
                 {columns.map((col) =>
-                  col === 'ações' ? (
-                    <td key={col}>
-                      {/* Ícone para alterar */}
-                      <FaEdit
-                        style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
-                        onClick={() => onEdit(row.id)}
-                      />
-                      {/* Ícone para excluir */}
-                      <FaTrashAlt
-                        style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-                        onClick={() => onDelete(row.id)}
-                      />
-                      {/* Ícone para ver dados relacionados */}
-                      {(isTurmas || isAlunos) && (
-                        <FaUsers
-                          style={{ cursor: 'pointer', color: 'green' }}
-                          onClick={() =>
-                            onViewRelated(
-                              isTurmas ? 'alunos' : 'turmas',
-                              row.id,
-                              isTurmas ? `Alunos da turma ${row.turma}` : `Turmas do aluno ${row.nome}`
-                            )
-                          }
-                        />
-                      )}
-                    </td>
-                  ) : (
-                    <td key={col}>{row[col]}</td>
-                  )
+                  col === 'ações' ? renderActions(row) : <td key={col}>{row[col]}</td>
                 )}
               </tr>
             ))
