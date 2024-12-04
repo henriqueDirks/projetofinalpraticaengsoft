@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import Table from './Table';
 import FormModal from './FormModal';
+import RelationModal from './RelationModal';
 
 const HomeView = () => {
   const [table, setTable] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [status, setStatus] = useState('ativo'); // "ativo" ou "inativo"
   const [showFormModal, setShowFormModal] = useState(false);
+  const [showRelationModal, setShowRelationModal] = useState(false);
   const [editingData, setEditingData] = useState(null);
+  const [relatedData, setRelatedData] = useState({}); // Para armazenar dados de relacionamento
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleTableChange = (e) => {
@@ -48,6 +51,11 @@ const HomeView = () => {
     // Atualiza a tabela ao mudar de status ou após salvar
   };
 
+  const handleViewRelations = (table, relatedId) => {
+    setRelatedData({ table, relatedId });
+    setShowRelationModal(true);
+  };
+
   return (
     <div className="home-view">
       <div className="top-bar">
@@ -79,6 +87,7 @@ const HomeView = () => {
             setEditingData(row);
             setShowFormModal(true);
           }}
+          onViewRelated={(relatedId) => handleViewRelations(table, relatedId)} // Passa para visualizar relacionamentos
           onToggleStatus={() => toggleStatus()}
         />
       )}
@@ -96,9 +105,16 @@ const HomeView = () => {
           onSave={handleSave}
         />
       )}
+      {showRelationModal && (
+        <RelationModal
+          table={relatedData.table}
+          relatedTable={table === 'alunos' ? 'turmas' : 'alunos'}
+          relatedId={relatedData.relatedId}
+          onClose={() => setShowRelationModal(false)}
+        />
+      )}
     </div>
   );
 };
 
 export default HomeView;
-  

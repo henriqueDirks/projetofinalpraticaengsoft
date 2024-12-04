@@ -129,6 +129,102 @@ const DatabaseModel = {
       });
     });
   },
+
+   // Buscar relacionamentos entre alunos e turmas
+   getRelatedData: (relatedTable, table, relatedId) => {
+    return new Promise((resolve, reject) => {
+      let query = '';
+      const values = [relatedId];
+
+      if (table === 'alunos' && relatedTable === 'turmas') {
+        query = `
+          SELECT 
+            turmas.id, turmas.nome AS turma_nome, 
+            salas.nome AS sala_nome, 
+            turmas.horario_inicio, turmas.horario_termino,
+            professores.nome AS professor_nome,
+            disciplinas.nome AS disciplina_nome
+          FROM turmaaluno
+          INNER JOIN turmas ON turmaaluno.turmas_id = turmas.id
+          INNER JOIN salas ON turmas.salas_id = salas.id
+          INNER JOIN professores ON turmas.professores_id = professores.id
+          INNER JOIN disciplinas ON turmas.disciplinas_id = disciplinas.id
+          WHERE turmaaluno.alunos_id = ?;
+        `;
+      } else if (table === 'turmas' && relatedTable === 'alunos') {
+        query = `
+          SELECT 
+            alunos.id, alunos.nome AS aluno_nome, 
+            alunos.CPF, alunos.regularidade
+          FROM turmaaluno
+          INNER JOIN alunos ON turmaaluno.alunos_id = alunos.id
+          WHERE turmaaluno.turmas_id = ?;
+        `;
+      }
+
+      connection.query(query, values, (err, results) => {
+        if (err) return reject(err);
+        resolve(results);
+      });
+    });
+  },
+
+  // Buscar dados disponíveis para adicionar relacionamentos
+  getAvailableData: (relatedTable, table, relatedId) => {
+    return new Promise((resolve, reject) => {
+      let query = '';
+      const values = [relatedId];
+
+      if (table === 'alunos' && relatedTable === 'turmas') {
+        query = `
+          SELECT turmas.id, turmas.nome AS turma_nome
+          FROM turmas
+          WHERE turmas.id NOT IN (
+            SELECT turmaaluno.turmas_id9
+            FROM turmaaluno
+            WHERE turmaaluno.alunos_id = ?
+          );
+        `;
+      } else if (table === 'turmas' && relatedTable === 'alunos') {
+        query = `
+          SELECT alunos.id, alunos.nome AS aluno_nome
+          FROM alunos
+          WHERE alunos.id NOT IN (
+            SELECT turmaaluno.alunos_id
+            FROM turmaaluno
+            WHERE turmaaluno.turmas_id = ?
+          );
+        `;
+      }
+
+      connection.query(query, values, (err, results) => {
+        if (err) return reject(err);
+        resolve(results);
+      });
+    });
+  },
+
+  addRelation: (alunos_id, turmas_id) => {
+    return new Promise((resolve, reject) => {
+      const query = `INSERT INTO turmaaluno (alunos_id, turmas_id) VALUES (?, ?)`;
+      connection.query(query, [alunos_id, turmas_id], (err, results) => {
+        if (err) return reject(err);
+        resolve(results);
+      });
+    });
+  },
+
+  // Remover relacionamento
+  deleteRelation: (alunos_id, turmas_id) => {
+    return new Promise((resolve, reject) => {
+      const query = `DELETE FROM turmaaluno WHERE alunos_id = ? AND turmas_id = ?`;
+      connection.query(query, [alunos_id, turmas_id], (err, results) => {
+        if (err) return reject(err);
+        resolve(results);
+      });
+    });
+  },
+
 };
 
 module.exports = DatabaseModel;

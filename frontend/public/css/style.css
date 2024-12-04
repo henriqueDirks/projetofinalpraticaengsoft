@@ -1,27 +1,64 @@
-.home-view {
-  padding: 20px;
+/* Geral */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+  color: #333;
 }
 
+h1, h2, h3 {
+  color: #444;
+}
+
+.container {
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+}
+
+/* Top Bar */
 .top-bar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.top-bar select,
-.top-bar input,
-.top-bar button {
+.top-bar select, .top-bar input, .top-bar button {
+  padding: 8px 12px;
+  font-size: 14px;
   margin-right: 10px;
 }
 
+.top-bar button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.top-bar button:hover {
+  background-color: #0056b3;
+}
+
+.top-bar button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Tabela de Dados */
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
-.data-table th,
-.data-table td {
+.data-table th, .data-table td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
@@ -31,70 +68,95 @@
   background-color: #f4f4f4;
 }
 
+.data-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.data-table td {
+  vertical-align: middle;
+}
+
+.data-table td .actions {
+  display: flex;
+  gap: 10px;
+}
+
+.data-table button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.data-table button:hover {
+  background-color: #ddd;
+}
+
+.data-table button:active {
+  background-color: #ccc;
+}
+
+/* Botões de Status */
 .toggle-status {
   position: fixed;
   bottom: 20px;
   right: 20px;
   padding: 10px 20px;
-  border-radius: 4px;
+  background-color: #28a745;
+  color: #fff;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
-  background-color: #007bff;
-  color: white;
 }
 
 .toggle-status:hover {
-  background-color: #0056b3;
+  background-color: #218838;
 }
 
+/* Modal */
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 4px;
-  width: 400px;
-}
-
-.modal-content label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.modal-content input,
-.modal-content select {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 15px;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background: white;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 20px;
+  z-index: 1000;
+  max-width: 90%;
+  overflow-y: auto;
+  border-radius: 8px;
 }
 
-.modal-content button {
+.modal h2 {
+  margin-top: 0;
+}
+
+.modal table {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.modal button {
+  margin-top: 10px;
   padding: 8px 12px;
-  margin-right: 10px;
+  font-size: 14px;
+  background-color: #007bff;
+  color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
-.modal-content button[type='submit'] {
-  background-color: #007bff;
-  color: white;
+.modal button:hover {
+  background-color: #0056b3;
 }
 
-.modal-content button[type='button'] {
-  background-color: #dc3545;
-  color: white;
+.modal .error-message {
+  color: red;
+  font-weight: bold;
 }

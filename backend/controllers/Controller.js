@@ -9,9 +9,9 @@ const Controller = {
     }
   },
 
-  // Validação do CPF
   validateCPF(cpf) {
-    cpf = cpf.replace(/[^\d]/g, ''); // Remove caracteres não numéricos
+    // Remove todos os caracteres não numéricos
+    cpf = cpf.replace(/[^\d]/g, '');
 
     // Verifica se o CPF tem 11 dígitos ou se todos os números são iguais
     if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) {
@@ -19,19 +19,20 @@ const Controller = {
     }
 
     // Cálculo dos dígitos verificadores
-    const calcDigit = (base) => {
+    const calcDigit = (cpfBase, factor) => {
       let total = 0;
-      for (let i = 0; i < base.length; i++) {
-        total += parseInt(base.charAt(i)) * (base.length + 1 - i);
+      for (let i = 0; i < cpfBase.length; i++) {
+        total += parseInt(cpfBase[i]) * factor--;
       }
       const remainder = total % 11;
       return remainder < 2 ? 0 : 11 - remainder;
     };
 
-    const base = cpf.slice(0, 9);
-    const digit1 = calcDigit(base);
-    const digit2 = calcDigit(base + digit1);
+    const base = cpf.slice(0, 9); // Pega os primeiros 9 números
+    const digit1 = calcDigit(base, 10); // Calcula o primeiro dígito verificador
+    const digit2 = calcDigit(base + digit1, 11); // Calcula o segundo dígito verificador
 
+    // Verifica se os dígitos verificadores calculados correspondem ao CPF informado
     if (cpf !== base + digit1 + digit2) {
       throw new Error('CPF inválido. Verifique e tente novamente.');
     }
@@ -151,6 +152,43 @@ const Controller = {
       throw new Error(`Erro ao reativar registro na tabela ${table}: ${err.message}`);
     }
   },
+
+  // Buscar dados relacionados
+  async getRelatedData(relatedTable, table, relatedId) {
+    try {
+      return await DatabaseModel.getRelatedData(relatedTable, table, relatedId);
+    } catch (err) {
+      throw new Error(`Erro ao buscar dados relacionados: ${err.message}`);
+    }
+  },
+
+  // Buscar dados disponíveis para adicionar
+  async getAvailableData(relatedTable, table, relatedId) {
+    try {
+      return await DatabaseModel.getAvailableData(relatedTable, table, relatedId);
+    } catch (err) {
+      throw new Error(`Erro ao buscar dados disponíveis: ${err.message}`);
+    }
+  },
+
+  // Adicionar relacionamento
+  async addRelation(alunos_id, turmas_id) {
+    try {
+      return await DatabaseModel.addRelation(alunos_id, turmas_id);
+    } catch (err) {
+      throw new Error(`Erro ao adicionar relação: ${err.message}`);
+    }
+  },
+
+  // Remover relacionamento
+  async deleteRelation(alunos_id, turmas_id) {
+    try {
+      return await DatabaseModel.deleteRelation(alunos_id, turmas_id);
+    } catch (err) {
+      throw new Error(`Erro ao excluir relação: ${err.message}`);
+    }
+  },
+
 };
 
 module.exports = Controller;
