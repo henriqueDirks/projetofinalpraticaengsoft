@@ -1,47 +1,24 @@
 import React, { useState } from 'react';
 import Table from './Table';
 import FormModal from './FormModal';
-import ReactivationModal from './ReactivationModal';
 
 const HomeView = () => {
   const [table, setTable] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showInativos, setShowInativos] = useState(false); // Alterna entre ativos e inativos
+  const [status, setStatus] = useState('ativo'); // "ativo" ou "inativo"
   const [showFormModal, setShowFormModal] = useState(false);
-  const [showReactivationModal, setShowReactivationModal] = useState(false);
   const [editingData, setEditingData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Atualiza a tabela selecionada
   const handleTableChange = (e) => {
     setTable(e.target.value);
-    setSearchTerm(''); // Limpa o termo de busca ao trocar de tabela
+    setSearchTerm('');
   };
 
-  // Desativa um registro
-  const handleDeactivate = (id) => {
-    fetch(`http://localhost:5000/api/${table}/${id}/deactivate`, { method: 'PATCH' })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Erro ao desativar registro.');
-        }
-        alert('Registro desativado com sucesso.');
-      })
-      .catch((err) => console.error(err.message));
+  const toggleStatus = () => {
+    setStatus(status === 'ativo' ? 'inativo' : 'ativo');
   };
 
-  // Reativa um registro
-  const handleReactivate = (id) => {
-    fetch(`http://localhost:5000/api/${table}/${id}/activate`, { method: 'PATCH' })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Erro ao reativar registro.');
-        }
-        alert('Registro reativado com sucesso.');
-      })
-      .catch((err) => console.error(err.message));
-  };
-
-  // Salva o formulário (edição ou inserção)
   const handleSave = (formData) => {
     const method = formData.id ? 'PUT' : 'POST';
     const url = formData.id
@@ -55,24 +32,26 @@ const HomeView = () => {
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error('Erro ao salvar registro.');
+          return response.json().then((data) => {
+            throw new Error(data.error || 'Erro ao salvar registro.');
+          });
         }
         alert('Registro salvo com sucesso.');
         setShowFormModal(false);
+        fetchData(); // Atualiza a tabela após salvar
       })
-      .catch((err) => console.error(err.message));
+      .catch((err) => setErrorMessage(err.message));
   };
 
-  // Alterna entre registros ativos e inativos
-  const toggleView = () => {
-    setShowInativos(!showInativos);
+  const fetchData = () => {
+    setErrorMessage(''); // Limpa mensagens de erro ao recarregar
+    // Atualiza a tabela ao mudar de status ou após salvar
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      {/* Barra superior */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-        <select onChange={handleTableChange} value={table} style={{ marginRight: '10px' }}>
+    <div className="home-view">
+      <div className="top-bar">
+        <select onChange={handleTableChange} value={table}>
           <option value="">Selecione uma tabela</option>
           <option value="alunos">Alunos</option>
           <option value="disciplinas">Disciplinas</option>
@@ -85,79 +64,36 @@ const HomeView = () => {
           placeholder="Pesquisar..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ marginRight: '10px', flex: 1 }}
         />
-        <button
-          onClick={() => {
-            setEditingData(null);
-            setShowFormModal(true);
-          }}
-          disabled={!table}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: '#007bff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
+        <button onClick={() => setShowFormModal(true)} disabled={!table}>
           Inserir
         </button>
       </div>
-
-      {/* Tabela */}
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
       {table && (
         <Table
           table={table}
           searchTerm={searchTerm}
-          showInativos={showInativos}
+          status={status}
           onEdit={(row) => {
             setEditingData(row);
             setShowFormModal(true);
           }}
-          onDeactivate={handleDeactivate}
-          onReactivate={handleReactivate}
-          onViewRelated={(relatedTable, id, title) =>
-            console.log(`Ver ${relatedTable} relacionados com ID ${id} (${title})`)
-          }
+          onToggleStatus={() => toggleStatus()}
         />
       )}
-
-      {/* Botão para alternar entre ativos e inativos */}
-      <button
-        onClick={toggleView}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          padding: '10px 20px',
-          backgroundColor: showInativos ? '#007bff' : '#28a745',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-        }}
-      >
-        {showInativos ? 'Voltar para Pesquisa' : 'Ver Inativos'}
+      <button onClick={toggleStatus} className="toggle-status">
+        {status === 'ativo' ? 'Ver Inativos' : 'Ver Ativos'}
       </button>
-
-      {/* Modal de formulário */}
       {showFormModal && (
         <FormModal
           table={table}
-          onClose={() => setShowFormModal(false)}
+          onClose={() => {
+            setShowFormModal(false);
+            setEditingData(null);
+          }}
           existingData={editingData}
           onSave={handleSave}
-        />
-      )}
-
-      {/* Modal de reativação */}
-      {showReactivationModal && (
-        <ReactivationModal
-          table={table}
-          onClose={() => setShowReactivationModal(false)}
-          onReactivate={handleReactivate}
         />
       )}
     </div>
@@ -165,3 +101,4 @@ const HomeView = () => {
 };
 
 export default HomeView;
+  

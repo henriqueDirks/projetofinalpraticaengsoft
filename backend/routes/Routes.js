@@ -2,24 +2,13 @@
   const router = express.Router();
   const Controller = require('../controllers/Controller');
 
-  // Busca registros ativos ou relacionados
-  router.get('/:table', async (req, res) => {
-    const { table } = req.params;
-    const { name, relatedId } = req.query; // Busca por nome ou registros relacionados
-    try {
-      const data = await Controller.getAll(table, name, relatedId);
-      res.status(200).json(data);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  });
-
-  // Busca registros inativos
-router.get('/:table/inativos', async (req, res) => {
+  // Busca registros por status
+router.get('/:table', async (req, res) => {
   const { table } = req.params;
-  const { name, relatedId } = req.query;
+  const { name = '', status = 'ativo' } = req.query;
+
   try {
-    const data = await Controller.getAllInativos(table, name, relatedId);
+    const data = await Controller.getAll(table, name, status);
     res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });

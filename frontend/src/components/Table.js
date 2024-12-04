@@ -1,135 +1,81 @@
 import React, { useEffect, useState } from 'react';
-import { FaEdit, FaTrashAlt, FaUsers } from 'react-icons/fa';
+import { FaEdit, FaTrashAlt, FaCheck } from 'react-icons/fa';
 
-const Table = ({ table, searchTerm, onEdit, onDeactivate, onViewRelated }) => {
+const Table = ({ table, searchTerm, status, onEdit, onToggleStatus }) => {
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (table) {
-      fetchData();
-    }
-  }, [table, searchTerm]);
+    fetchData();
+  }, [table, searchTerm, status]);
 
   const fetchData = () => {
     setIsLoading(true);
-
-    const queryParam = searchTerm ? `?name=${searchTerm}` : '';
+    const queryParam = `?status=${status}&name=${searchTerm}`;
     const url = `http://localhost:5000/api/${table}${queryParam}`;
-
     fetch(url)
       .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Erro ao buscar dados: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Erro ao buscar dados: ${response.statusText}`);
         return response.json();
       })
-      .then((data) => {
-        setData(data);
-        setError(null);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setData([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+      .then((data) => setData(data))
+      .catch((err) => setError(err.message))
+      .finally(() => setIsLoading(false));
   };
 
   const handleDeactivate = (id) => {
     fetch(`http://localhost:5000/api/${table}/${id}/deactivate`, { method: 'PATCH' })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Erro ao desativar registro.');
-        }
-        alert('Registro desativado com sucesso.');
-        fetchData(); // Atualiza a tabela após a desativação
-      })
-      .catch((err) => {
-        console.error(err.message);
-        alert('Erro ao desativar registro.');
-      });
+      .then(() => fetchData()) // Atualiza os dados após desativar
+      .catch((err) => console.error(err.message));
   };
 
-  const renderActions = (row) => (
-    <td>
-      {/* Botão de Editar */}
-      <FaEdit
-        style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
-        onClick={() => onEdit(row)}
-      />
-      {/* Botão de Desativar */}
-      <FaTrashAlt
-        style={{ cursor: 'pointer', marginRight: '10px', color: 'red' }}
-        onClick={() => handleDeactivate(row.id)}
-      />
-      {/* Botão de Ver Relacionados */}
-      {(table === 'turmas' || table === 'alunos') && (
-        <FaUsers
-          style={{ cursor: 'pointer', color: 'green' }}
-          onClick={() =>
-            onViewRelated(
-              table === 'turmas' ? 'alunos' : 'turmas',
-              row.id,
-              table === 'turmas'
-                ? `Alunos da turma ${row.turma || row.nome}`
-                : `Turmas do aluno ${row.nome}`
-            )
-          }
-        />
-      )}
-    </td>
-  );
+  const handleReactivate = (id) => {
+    fetch(`http://localhost:5000/api/${table}/${id}/activate`, { method: 'PATCH' })
+      .then(() => fetchData()) // Atualiza os dados após reativar
+      .catch((err) => console.error(err.message));
+  };
 
-  if (!table) {
-    return <p>Selecione uma tabela para visualizar os dados.</p>;
-  }
+  if (!table) return <p>Selecione uma tabela para visualizar os dados.</p>;
 
-  if (isLoading) {
-    return <p>Carregando dados...</p>;
-  }
+  if (isLoading) return <p>Carregando dados...</p>;
 
-  if (error) {
-    return <p style={{ color: 'red' }}>{error}</p>;
-  }
+  if (error) return <p className="error-message">{error}</p>;
 
-  const columns = data.length > 0
-    ? Object.keys(data[0]).filter((key) => key !== 'id' && key !== 'status')
+  const columns = data.length > 0 
+    ? Object.keys(data[0]).filter((col) => col !== 'status') 
     : [];
 
-  if (data.length > 0) {
-    columns.push('ações');
-  }
-
   return (
-    <div>
-      <table>
-        <thead>
-          <tr>
+    <table className="data-table">
+      <thead>
+        <tr>
+          {columns.map((col) => (
+            <th key={col}>{col.toUpperCase()}</th>
+          ))}
+          <th>AÇÕES</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row) => (
+          <tr key={row.id}>
             {columns.map((col) => (
-              <th key={col}>{col.toUpperCase()}</th>
+              <td key={col}>{row[col]}</td>
             ))}
+            <td>
+              {status === 'ativo' ? (
+                <>
+                  <FaEdit onClick={() => onEdit(row)} />
+                  <FaTrashAlt onClick={() => handleDeactivate(row.id)} />
+                </>
+              ) : (
+                <FaCheck onClick={() => handleReactivate(row.id)} />
+              )}
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {data.length > 0 ? (
-            data.map((row) => (
-              <tr key={row.id}>
-                {columns.map((col) =>
-                  col === 'ações' ? renderActions(row) : <td key={col}>{row[col]}</td>
-                )}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={columns.length}>Nenhum dado encontrado.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
 };
 

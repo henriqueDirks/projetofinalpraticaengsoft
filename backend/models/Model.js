@@ -1,71 +1,8 @@
 const connection = require('../db');
 
 const DatabaseModel = {
-  selectAll: (table, name = '', relatedId = null) => {
+  runQuery: (query, values) => {
     return new Promise((resolve, reject) => {
-      let query = '';
-      let values = [];
-
-      switch (table) {
-        case 'turmas':
-          if (relatedId) {
-            // Consulta para alunos relacionados a uma turma
-            query = `
-              SELECT alunos.id AS aluno_id, alunos.nome AS aluno_nome
-              FROM turmaaluno
-              INNER JOIN alunos ON turmaaluno.alunos_id = alunos.id
-              WHERE turmaaluno.turmas_id = ? AND alunos.status = 'ativo';
-            `;
-            values = [relatedId];
-          } else {
-            // Consulta padrão para turmas
-            query = `
-              SELECT 
-                turmas.id, turmas.nome AS turma,
-                professores.nome AS professor,
-                salas.nome AS sala,
-                disciplinas.nome AS disciplina,
-                turmas.dia_semana, turmas.horario_inicio, turmas.horario_termino
-              FROM turmas
-              INNER JOIN professores ON turmas.professores_id = professores.id
-              INNER JOIN salas ON turmas.salas_id = salas.id
-              INNER JOIN disciplinas ON turmas.disciplinas_id = disciplinas.id
-              WHERE turmas.status = 'ativo'
-            `;
-            if (name) {
-              query += ' AND turmas.nome LIKE ?';
-              values.push(`%${name}%`);
-            }
-          }
-          break;
-
-        case 'alunos':
-          if (relatedId) {
-            // Consulta para turmas relacionadas a um aluno
-            query = `
-              SELECT turmas.id AS turma_id, turmas.nome AS turma_nome
-              FROM turmaaluno
-              INNER JOIN turmas ON turmaaluno.turmas_id = turmas.id
-              WHERE turmaaluno.alunos_id = ? AND turmas.status = 'ativo';
-            `;
-            values = [relatedId];
-          } else {
-            // Consulta padrão para alunos
-            query = name
-              ? `SELECT * FROM ${table} WHERE status = 'ativo' AND nome LIKE ?`
-              : `SELECT * FROM ${table} WHERE status = 'ativo'`;
-            values = name ? [`%${name}%`] : [];
-          }
-          break;
-
-        default:
-          query = name
-            ? `SELECT * FROM ${table} WHERE status = 'ativo' AND nome LIKE ?`
-            : `SELECT * FROM ${table} WHERE status = 'ativo'`;
-          values = name ? [`%${name}%`] : [];
-          break;
-      }
-
       connection.query(query, values, (err, results) => {
         if (err) return reject(err);
         resolve(results);
@@ -73,69 +10,70 @@ const DatabaseModel = {
     });
   },
 
-  selectAllInativos: (table, name = '', relatedId = null) => {
+  selectAll: (table, name = '', status = 'ativo') => {
     return new Promise((resolve, reject) => {
       let query = '';
-      let values = [];
+      const values = [`%${name}%`, status];
 
       switch (table) {
         case 'turmas':
-          if (relatedId) {
-            // Consulta para alunos relacionados a uma turma
-            query = `
-              SELECT alunos.id AS aluno_id, alunos.nome AS aluno_nome
-              FROM turmaaluno
-              INNER JOIN alunos ON turmaaluno.alunos_id = alunos.id
-              WHERE turmaaluno.turmas_id = ? AND alunos.status = 'inativo';
-            `;
-            values = [relatedId];
-          } else {
-            // Consulta padrão para turmas
-            query = `
-              SELECT 
-                turmas.id, turmas.nome AS turma,
-                professores.nome AS professor,
-                salas.nome AS sala,
-                disciplinas.nome AS disciplina,
-                turmas.dia_semana, turmas.horario_inicio, turmas.horario_termino
-              FROM turmas
-              INNER JOIN professores ON turmas.professores_id = professores.id
-              INNER JOIN salas ON turmas.salas_id = salas.id
-              INNER JOIN disciplinas ON turmas.disciplinas_id = disciplinas.id
-              WHERE turmas.status = 'inativo'
-            `;
-            if (name) {
-              query += ' AND turmas.nome LIKE ?';
-              values.push(`%${name}%`);
-            }
-          }
+          query = `
+            SELECT 
+              turmas.id, turmas.nome AS turma_nome, turmas.dia_semana, 
+              turmas.horario_inicio, turmas.horario_termino,
+              professores.nome AS professor_nome, 
+              salas.nome AS sala_nome, 
+              disciplinas.nome AS disciplina_nome
+            FROM turmas
+            INNER JOIN professores ON turmas.professores_id = professores.id
+            INNER JOIN salas ON turmas.salas_id = salas.id
+            INNER JOIN disciplinas ON turmas.disciplinas_id = disciplinas.id
+            WHERE turmas.nome LIKE ? AND turmas.status = ?
+          `;
           break;
 
         case 'alunos':
-          if (relatedId) {
-            // Consulta para turmas relacionadas a um aluno
-            query = `
-              SELECT turmas.id AS turma_id, turmas.nome AS turma_nome
-              FROM turmaaluno
-              INNER JOIN turmas ON turmaaluno.turmas_id = turmas.id
-              WHERE turmaaluno.alunos_id = ? AND turmas.status = 'inativo';
-            `;
-            values = [relatedId];
-          } else {
-            // Consulta padrão para alunos
-            query = name
-              ? `SELECT * FROM ${table} WHERE status = 'inativo' AND nome LIKE ?`
-              : `SELECT * FROM ${table} WHERE status = 'inativo'`;
-            values = name ? [`%${name}%`] : [];
-          }
+          query = `
+            SELECT 
+              alunos.id, alunos.nome, alunos.CPF, 
+              alunos.regularidade
+            FROM alunos
+            WHERE alunos.nome LIKE ? AND alunos.status = ?
+          `;
+          break;
+
+        case 'disciplinas':
+          query = `
+            SELECT 
+              disciplinas.id, disciplinas.nome, disciplinas.codigo, 
+              disciplinas.periodo
+            FROM disciplinas
+            WHERE disciplinas.nome LIKE ? AND disciplinas.status = ?
+          `;
+          break;
+
+        case 'professores':
+          query = `
+            SELECT 
+              professores.id, professores.nome, professores.CPF,
+              professores.titulacao
+            FROM professores
+            WHERE professores.nome LIKE ? AND professores.status = ?
+          `;
+          break;
+
+        case 'salas':
+          query = `
+            SELECT 
+              salas.id, salas.nome, salas.local, 
+              salas.capacidade
+            FROM salas
+            WHERE salas.nome LIKE ? AND salas.status = ?
+          `;
           break;
 
         default:
-          query = name
-            ? `SELECT * FROM ${table} WHERE status = 'inativo' AND nome LIKE ?`
-            : `SELECT * FROM ${table} WHERE status = 'inativo'`;
-          values = name ? [`%${name}%`] : [];
-          break;
+          return reject(new Error(`Tabela "${table}" não suportada.`));
       }
 
       connection.query(query, values, (err, results) => {
@@ -151,6 +89,7 @@ const DatabaseModel = {
       const values = Object.values(data);
       const placeholders = values.map(() => '?').join(', ');
       const query = `INSERT INTO ${table} (${keys}) VALUES (${placeholders})`;
+
       connection.query(query, values, (err, results) => {
         if (err) return reject(err);
         resolve(results);
@@ -163,6 +102,7 @@ const DatabaseModel = {
       const updates = Object.keys(data).map((key) => `${key} = ?`).join(', ');
       const values = [...Object.values(data), id];
       const query = `UPDATE ${table} SET ${updates} WHERE id = ?`;
+
       connection.query(query, values, (err, results) => {
         if (err) return reject(err);
         resolve(results);
@@ -190,16 +130,5 @@ const DatabaseModel = {
     });
   },
 };
-
-// Excluir relação entre aluno e turma
-deleteRelation: (alunos_id, turmas_id) => {
-  return new Promise((resolve, reject) => {
-    const query = `DELETE FROM turmaaluno WHERE alunos_id = ? AND turmas_id = ?`;
-    connection.query(query, [alunos_id, turmas_id], (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
-    });
-  });
-},
 
 module.exports = DatabaseModel;
